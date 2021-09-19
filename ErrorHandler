@@ -4,6 +4,11 @@ const { validationResult } = require("express-validator")
 function validationError(req, res, next) {
       const errors = validationResult(req)
       if (!errors.isEmpty()) {
+            let text = ""
+            for (let object of errors.array()) {
+                  text = text + " " + object.param + ": " + object.value + ","
+            }
+            logger.warn({message: text, label: "Validation Error"})
             return new ErrorBuilder("Validation Error")
             .setIO(true)
             .setDesc("Provided information was not validated successfully")
@@ -15,11 +20,15 @@ function validationError(req, res, next) {
 }
 function sqlError(error) {
       try {
-            return new ErrorBuilder("Internal server error")
+            //should be tested
+            logger.error({message: error.originalError.info.message, label: "Internal server error"})
+            //microsoft sql procedure error format
+            return new ErrorBuilder(error.originalError.info.message)
             .setIO(false)
             .setDesc("An error occured. Please try again later!")
             .setHttpCode(500)
-            .setErrors(error)
+            //microsoft sql procedure error format
+            .setErrors(error.originalError.info)
             .build()
       } catch (e) {
             return new ErrorBuilder(e.message)
