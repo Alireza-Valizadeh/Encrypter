@@ -15,3 +15,10 @@
                   return result
             } else return date
       }
+       
+function GetMinimumDate() {
+      let todayDate = new Date().toLocaleDateString('fa-IR')
+      let x = toDateFormat(todayDate)
+      const minimumDate = {year: Number(x.split("/")[0]) , month: Number(x.split("/")[1]), day: Number(x.split("/")[2])}
+      return minimumDate
+}
