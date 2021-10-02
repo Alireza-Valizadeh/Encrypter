@@ -1,5 +1,5 @@
 const { validationResult } = require("express-validator")
-const logger = require("./logger")
+const logger = require("../Helper/Logger")
 
 
 function validationError(req, res, next) {
@@ -9,7 +9,7 @@ function validationError(req, res, next) {
             for (let object of errors.array()) {
                   text = text + " " + object.param + ": " + object.value + ","
             }
-            logger.warn({message: text, label: "Limitation Error"})
+            logger.warn({message: text, label: "Validation Error"})
             return new ErrorBuilder("Validation Error")
             .setIO(true)
             .setDesc("Provided information was not validated successfully")
@@ -28,6 +28,24 @@ function LimitationError(req, res, next) {
             .setErrors([{name: "Limitation Error", msg: "Too many Requests in a short period of time. Please try again later"}])
             .setHttpCode(429)
             .response(res)
+}
+function mongoError(error) {
+      try {
+            logger.error({message: error.message, label: "Internal server error"})
+            return new ErrorBuilder("Internal server error")
+            .setIO(false)
+            .setDesc("An error occured. Please try again later!")
+            .setHttpCode(500)
+            .setErrors(error)
+            .build()
+      }  catch(e) {
+            return new ErrorBuilder(e.message)
+            .setIO(true)
+            .setDesc("mongoDB error")
+            .setHttpCode(500)
+            .setErrors({error, e})
+            .build()
+      }
 }
 
 function sqlError(error) {
@@ -95,5 +113,6 @@ class ErrorBuilder  {
 module.exports = {
       validationError: validationError,
       sqlError: sqlError,
-      LimitationError: LimitationError
+      LimitationError: LimitationError,
+      mongoError: mongoError
 }
