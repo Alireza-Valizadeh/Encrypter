@@ -1,0 +1,63 @@
+const functions = require("firebase-functions");
+const { ref } = require("firebase-functions/v1/database");
+const bcrypt = require("bcrypt");
+
+exports.hashMessage = functions.database
+  .ref("/lowercase/messages/{container}")
+  .onCreate(async (snap, context) => {
+    const message = snap.val();
+    try {
+      const hashedMessage = await bcrypt.hash(message, 10);
+      return snap.ref.set(hashedMessage);
+    } catch (e) {
+      functions.logger.log(e);
+      return null;
+    }
+  });
+
+exports.hashEditedMessage = functions.database
+  .ref("/lowercase/messages/{container}")
+  .onUpdate(async (change, context) => {
+    const message = change.after.val();
+    try {
+      if (change.after.val().startsWith("$2b$")) {
+        functions.logger.log("This message is already hashed in the database");
+        return null;
+      }
+      const hashedMessage = await bcrypt.hash(message, 10);
+      return change.after.ref.set(hashedMessage);
+    } catch (e) {
+      functions.logger.log(e);
+      return null;
+    }
+  });
+
+exports.hashAll = functions.database
+  .ref("/lowercase/messages/{container}")
+  .onWrite(async (change, context) => {
+    if (change.before.exists()) {
+      if (change.after.exists() && change.after.val().includes("$")) {
+        functions.logger.log("This message is already hashed in the database");
+        return null;
+      }
+      functions.logger.log("This message already exists in the database");
+      const newMessage1 = change.after.val();
+      try {
+        const hashedMessage = await bcrypt.hash(newMessage1, 10);
+        return change.after.ref.set(hashedMessage);
+      } catch (e) {
+        functions.logger.log(e);
+      }
+    }
+    if (!change.after.exists()) {
+      functions.logger.log("This message was deleted from the database");
+      return null;
+    }
+    const newMessage = change.after.val();
+    try {
+      const hashedMessage = await bcrypt.hash(newMessage, 10);
+      return change.after.ref.set(hashedMessage);
+    } catch (e) {
+      functions.logger.log(e);
+    }
+  });
