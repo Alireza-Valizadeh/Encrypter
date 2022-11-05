@@ -1,0 +1,10 @@
+{
+  "include": [
+    ".eslintrc.js"
+  ]
+}
+/*
+    installing packages for ESLint
+    npm i --save-dev @typescript-eslint/eslint-plugin @typescript-eslint/parser eslint eslint-config-google eslint-plugin-import
+
+*/ 
